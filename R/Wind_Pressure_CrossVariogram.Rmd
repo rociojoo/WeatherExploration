@@ -107,7 +107,8 @@ raspt3_sp2 <- raspt2_sp2 %>%
   filter(dttm <"2013-01-30")
 
 raspt_wind_sp <- left_join(raspt_wind,raspt3_sp2)
-save(raspt_wind_sp,file=paste0(path_output_data,"transformed_data.rds")) # I'm saving this in an object so I don't have to do this again
+raspt_wind_sp$WindSp <- sqrt(raspt_wind_sp$u2^2 + raspt_wind_sp$v2^2)
+saveRDS(raspt_wind_sp,file=paste0(path_output_data,"transformed_data.rds")) # I'm saving this in an object so I don't have to do this again
 
 rm(list=setdiff(ls(), "raspt_wind_sp")) # I remove everything else from the environment
 ```
@@ -122,7 +123,7 @@ STFDF_day <- stConstruct(raspt_wind_sp,space=c('lon','lat'),time='dttm',
                          SpatialObj=SpatialPoints(raspt_wind_sp[,c('lon','lat')]))
 is(STFDF_day) # Construct as IRREGULAR => 92.7 Mb!
 STFDF_day    <- as(STFDF_day, "STFDF") 
-is(STFDF_day) # Transformed into Spatio Temporal FULL LATTICE Data Frame=> 17.9  Mb only!
+is(STFDF_day) # Transformed into Spatio Temporal FULL LATTICE Data Frame=> 65.4  Mb only!
 
 # Adding projections
 proj4string(STFDF_day) <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
@@ -153,22 +154,22 @@ elem <- matrix(NA,n_h,3)
 cross_vario_list <- rep(list(elem),num_stamps)
 
 for (i in 1:num_stamps){
-sel <- STFDF_day[,time_stamp[i],c("u2","v2","sp2")]
-g <- gstat(NULL, "u2", u2 ~ 1, data = sel[!is.na(sel[,"u2"]$u2),"u2"])
-g <- gstat(g, "v2", v2 ~ 1, data = sel[!is.na(sel[,"v2"]$v2),"v2"])
+sel <- STFDF_day[,time_stamp[i],c("WindSp","sp2")]
+g <- gstat(NULL, "WindSp", WindSp ~ 1, data = sel[!is.na(sel[,"WindSp"]$WindSp),"WindSp"])
+# g <- gstat(g, "v2", v2 ~ 1, data = sel[!is.na(sel[,"v2"]$v2),"v2"])
 g <- gstat(g, "sp2", sp2 ~ lon + lat, data = sel[!is.na(sel[,"sp2"]$sp2),"sp2"]) # from previous analyses, I observed that pressure is not stationary in space and depends on the location. Taking away the effect of the location gives it a 'stationary appearance' (the variogram looks OK)
 vm <- variogram(g,width=n_h)
 cross_vario_list[[i]] <- data.frame(dist=vm$dist,gamma=vm$gamma,id=vm$id)
 }
 
 cross_df <- do.call(rbind.data.frame,cross_vario_list)
-cross_df$timestamp_id <- as.factor(rep(1:num_stamps,each=24*6))  # 24 is a consequence of n_h 100km
-save(cross_df,file=paste0(path_output_data,"cross_vario_df.rds"))
+cross_df$timestamp_id <- as.factor(rep(1:num_stamps,each=24*3))  # 24 is a consequence of n_h 100km
+save(cross_df,file=paste0(path_output_data,"cross_vario_df_windsp.rds"))
 
 ggplot(data = cross_df, mapping = aes(x = dist, y = gamma, color = timestamp_id)) +
   geom_line() +
   facet_wrap(~ id, scales = "free")
-ggsave(paste0(path_plots,"cross_vario.pdf"), width = 20, height = 20, units = "cm")
+ggsave(paste0(path_plots,"cross_vario_windsp.pdf"), width = 20, height = 20, units = "cm")
 ```
 
 And here is the graphic output:
@@ -186,3 +187,16 @@ X: Distance in km, Y: variogram values.
 Time stamps are the daytimes of January of 2013 (i.e. 1: first day at 00:00, 2: Jan 1 12:00, and so on). Let's focus on the cross-variograms. They vary from datetime to datetime. Don't worry about the number of observations. There is like more than a million observations per point in the empirical variogram. In some datetimes there seems to be more spatial covariation than at others. Ranges differ, and in some cases there is even negative covariation. What is going on? How can we interpret it? Does it make sense? What should we expect to get if I include a larger time series?
 
 
+
+And here is the graphic output:
+
+```{r,echo=FALSE}
+library(ggplot2)
+path_output_data <- '../DataOutputs/'
+load(paste0(path_output_data,"cross_vario_df_windsp.rds"))
+ggplot(data = cross_df, mapping = aes(x = dist, y = gamma, color = timestamp_id)) +
+  geom_line() +
+  facet_wrap(~ id, scales = "free")
+```
+
+Not the same pattern for every timestamp.
