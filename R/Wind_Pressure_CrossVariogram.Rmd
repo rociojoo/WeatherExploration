@@ -181,6 +181,7 @@ load(paste0(path_output_data,"cross_vario_df.rds"))
 ggplot(data = cross_df, mapping = aes(x = dist, y = gamma, color = timestamp_id)) +
   geom_line() +
   facet_wrap(~ id, scales = "free")
+
 ```
 
 X: Distance in km, Y: variogram values.
@@ -197,6 +198,13 @@ load(paste0(path_output_data,"cross_vario_df_windsp.rds"))
 ggplot(data = cross_df, mapping = aes(x = dist, y = gamma, color = timestamp_id)) +
   geom_line() +
   facet_wrap(~ id, scales = "free")
+
+
+sub_cross <- cross_df[cross_df$dist < 1000,]
+ggplot(data = sub_cross, mapping = aes(x = dist, y = gamma, color = timestamp_id)) +
+  geom_line() +
+  facet_wrap(~ id, scales = "free")
+
 ```
 
 Not the same pattern for every timestamp.
