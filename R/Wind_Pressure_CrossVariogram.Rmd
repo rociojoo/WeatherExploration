@@ -143,6 +143,10 @@ What we expect is a curve showing that the variogram function is increasing with
 
 I'm computing variograms for each variable (u, v and sp) and paired cross-variograms, which show how they covariate in space. I'm running an independence analysis for each timestamp (10 timestamps, 5 days), expecting to find common patterns. 
 
+The cross-covariogram is defined as:
+
+$\hat{\gamma_{Z,W}}(h) = \frac{1}{2n(h)} \sum_{x_i-x_j=h}(Z(x_i)-Z(x_j))(W(x_i)-W(x_j))$
+
 Anyway, here is how you can do it in R:
 
 ```{r,eval=FALSE}

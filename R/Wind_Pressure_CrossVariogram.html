@@ -241,6 +241,8 @@ proj4string(STFDF_day) &lt;- &quot;+proj=longlat +ellps=WGS84 +datum=WGS84 +no_d
 <p>I’m computing only empirical variograms, i.e. calculated from the data. No models are used because this is really exploratory.</p>
 <p>What we expect is a curve showing that the variogram function is increasing with distance, until certain point, showing that the distance is large enough that at that point there is no autocorrelation any more (distances larger than that don’t make a difference in the values). I hope I’m explaining myself correctly.</p>
 <p>I’m computing variograms for each variable (u, v and sp) and paired cross-variograms, which show how they covariate in space. I’m running an independence analysis for each timestamp (10 timestamps, 5 days), expecting to find common patterns.</p>
+<p>The cross-covariogram is defined as:</p>
+<p><span class="math inline">\(\hat{\gamma_{Z,W}}(h) = \frac{1}{2n(h)} \sum_{x_i-x_j=h}(Z(x_i)-Z(x_j))(W(x_i)-W(x_j))\)</span></p>
 <p>Anyway, here is how you can do it in R:</p>
 <pre class="r"><code>time_stamp &lt;- STFDF_day@endTime
 num_stamps &lt;- 10 # 5 days (10 observations)
